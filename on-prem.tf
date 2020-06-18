@@ -88,7 +88,7 @@ resource "azurerm_subnet_network_security_group_association" "mgmt-nsg-associati
 }
 
 resource "azurerm_virtual_machine" "onprem-vm" {
-  name                  = "${local.prefix-mgt-onprem}-vm"
+  name                  = "${local.prefix-onprem}-vm"
   location              = azurerm_resource_group.onprem-vnet-rg.location
   resource_group_name   = azurerm_resource_group.onprem-vnet-rg.name
   network_interface_ids = [azurerm_network_interface.onprem-nic.id]
