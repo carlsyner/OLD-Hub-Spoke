@@ -218,7 +218,7 @@ install_ad_command   = "Add-WindowsFeature -name ad-domain-services -IncludeMana
 configure_ad_command = "Install-ADDSForest -CreateDnsDelegation:$false -DomainMode 7 -DomainName contoso.com -DomainNetbiosName contoso -ForestMode 7 -InstallDns:$true -SafeModeAdministratorPassword $password -Force:$true"
 exit_code_hack       = "exit 0"
 powershell_command   = "${local.import_command}; ${local.password_command}; ${local.install_ad_command}; ${local.configure_ad_command}; ${local.exit_code_hack}"
-#powershell_command  = "Import-Module ADDSDeployment; $password = ConvertTo-SecureString \"Password1234!\" -AsPlainText -Force; Add-WindowsFeature -name ad-domain-services -IncludeManagementTools; Install-ADDSForest -CreateDnsDelegation:$false -DomainMode Win2012R2 -DomainName contoso.com -DomainNetbiosName contoso -ForestMode Win2012R2 -InstallDns:$true -SafeModeAdministratorPassword $password -Force:$true; shutdown -r -t 40"
+#powershell_command  = "Import-Module ADDSDeployment; $password = ConvertTo-SecureString "Password1234!" -AsPlainText -Force; Add-WindowsFeature -name ad-domain-services -IncludeManagementTools; Install-ADDSForest -CreateDnsDelegation:$false -DomainMode 7 -DomainName contoso.com -DomainNetbiosName contoso -ForestMode 7 -InstallDns:$true -SafeModeAdministratorPassword $password -Force:$true"
 }
 
 resource "azurerm_virtual_machine_extension" "create-active-directory-forest" {
@@ -226,12 +226,10 @@ resource "azurerm_virtual_machine_extension" "create-active-directory-forest" {
   depends_on = [azurerm_virtual_machine.onprem-dc-vm]
   
   name                 = "create-active-directory-forest"
-  location             = var.onpremlocation
-  resource_group_name  = "private-endpoint-openhack-onprem-rg"
-  virtual_machine_name = "onprem-dc-vm"
+  virtual_machine_id   = azurerm_virtual_machine.onprem-dc-vm.id
   publisher            = "Microsoft.Compute"
   type                 = "CustomScriptExtension"
-  type_handler_version = "1.9"
+  type_handler_version = "2.0"
 
   settings = <<SETTINGS
     {
