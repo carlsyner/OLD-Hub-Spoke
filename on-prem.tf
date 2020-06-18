@@ -34,8 +34,8 @@ resource "azurerm_subnet" "onprem-mgmt" {
   address_prefix       = "192.168.1.128/25"
 }
 
-resource "azurerm_public_ip" "onprem-pip" {
-    name                         = "${local.prefix-onprem}-pip"
+resource "azurerm_public_ip" "onprem-mgmt-pip" {
+    name                 = "onprem-mgmt-pip"
     location            = azurerm_resource_group.onprem-vnet-rg.location
     resource_group_name = azurerm_resource_group.onprem-vnet-rg.name
     allocation_method   = "Dynamic"
@@ -45,8 +45,8 @@ resource "azurerm_public_ip" "onprem-pip" {
     }
 }
 
-resource "azurerm_network_interface" "onprem-nic" {
-  name                 = "${local.prefix-onprem}-nic"
+resource "azurerm_network_interface" "onprem-mgmt-nic" {
+  name                 = "onprem-mgmt-pip"
   location             = azurerm_resource_group.onprem-vnet-rg.location
   resource_group_name  = azurerm_resource_group.onprem-vnet-rg.name
   enable_ip_forwarding = true
@@ -60,8 +60,8 @@ resource "azurerm_network_interface" "onprem-nic" {
 }
 
 # Create Network Security Group and rule
-resource "azurerm_network_security_group" "onprem-nsg" {
-    name                = "${local.prefix-onprem}-nsg"
+resource "azurerm_network_security_group" "onprem-mgmt-nsg" {
+    name                = "onprem-mgmt-nsg"
     location            = azurerm_resource_group.onprem-vnet-rg.location
     resource_group_name = azurerm_resource_group.onprem-vnet-rg.name
 
@@ -87,8 +87,8 @@ resource "azurerm_subnet_network_security_group_association" "mgmt-nsg-associati
   network_security_group_id = azurerm_network_security_group.onprem-nsg.id
 }
 
-resource "azurerm_virtual_machine" "onprem-vm" {
-  name                  = "${local.prefix-onprem}-vm"
+resource "azurerm_virtual_machine" "onprem-mgmt-vm" {
+  name                  = "onprem-mgmt-vm"
   location              = azurerm_resource_group.onprem-vnet-rg.location
   resource_group_name   = azurerm_resource_group.onprem-vnet-rg.name
   network_interface_ids = [azurerm_network_interface.onprem-nic.id]
@@ -102,7 +102,7 @@ resource "azurerm_virtual_machine" "onprem-vm" {
   }
 
   storage_os_disk {
-    name              = "myosdisk1"
+    name              = "onprem-mgmt-osdisk"
     caching           = "ReadWrite"
     create_option     = "FromImage"
     managed_disk_type = "Standard_LRS"
