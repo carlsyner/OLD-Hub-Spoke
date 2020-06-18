@@ -34,6 +34,13 @@ resource "azurerm_subnet" "onprem-mgmt" {
   address_prefix       = "192.168.1.128/25"
 }
 
+resource "azurerm_subnet" "onprem-dc" {
+  name                 = "dc"
+  resource_group_name  = azurerm_resource_group.onprem-vnet-rg.name
+  virtual_network_name = azurerm_virtual_network.onprem-vnet.name
+  address_prefix       = "192.168.2.0/27"
+}
+
 resource "azurerm_public_ip" "onprem-mgmt-pip" {
     name                 = "onprem-mgmt-pip"
     location            = azurerm_resource_group.onprem-vnet-rg.location
@@ -46,16 +53,29 @@ resource "azurerm_public_ip" "onprem-mgmt-pip" {
 }
 
 resource "azurerm_network_interface" "onprem-mgmt-nic" {
-  name                 = "onprem-mgmt-pip"
+  name                 = "onprem-mgmt-nic"
   location             = azurerm_resource_group.onprem-vnet-rg.location
   resource_group_name  = azurerm_resource_group.onprem-vnet-rg.name
-  enable_ip_forwarding = true
+  enable_ip_forwarding = false
 
   ip_configuration {
     name                          = local.prefix-onprem
     subnet_id                     = azurerm_subnet.onprem-mgmt.id
     private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = azurerm_public_ip.onprem-pip.id
+    public_ip_address_id          = azurerm_public_ip.onprem-mgmt-pip.id
+  }
+}
+
+resource "azurerm_network_interface" "onprem-dc-nic" {
+  name                 = "onprem-dc-nic"
+  location             = azurerm_resource_group.onprem-vnet-rg.location
+  resource_group_name  = azurerm_resource_group.onprem-vnet-rg.name
+  enable_ip_forwarding = false
+
+  ip_configuration {
+    name                          = local.prefix-onprem
+    subnet_id                     = azurerm_subnet.onprem-dc.id
+    private_ip_address_allocation = "Dynamic"
   }
 }
 
@@ -84,14 +104,14 @@ resource "azurerm_network_security_group" "onprem-mgmt-nsg" {
 
 resource "azurerm_subnet_network_security_group_association" "mgmt-nsg-association" {
   subnet_id                 = azurerm_subnet.onprem-mgmt.id
-  network_security_group_id = azurerm_network_security_group.onprem-nsg.id
+  network_security_group_id = azurerm_network_security_group.onprem-mgmt-nsg.id
 }
 
 resource "azurerm_virtual_machine" "onprem-mgmt-vm" {
   name                  = "onprem-mgmt-vm"
   location              = azurerm_resource_group.onprem-vnet-rg.location
   resource_group_name   = azurerm_resource_group.onprem-vnet-rg.name
-  network_interface_ids = [azurerm_network_interface.onprem-nic.id]
+  network_interface_ids = [azurerm_network_interface.onprem-mgmt-nic.id]
   vm_size               = var.vmsize
 
   storage_image_reference {
@@ -123,8 +143,44 @@ resource "azurerm_virtual_machine" "onprem-mgmt-vm" {
   }
 }
 
-resource "azurerm_public_ip" "onprem-vpn-gateway1-pip" {
-  name                = "${local.prefix-onprem}-vpn-gateway1-pip"
+resource "azurerm_virtual_machine" "onprem-dc-vm" {
+  name                  = "onprem-dc-vm"
+  location              = azurerm_resource_group.onprem-vnet-rg.location
+  resource_group_name   = azurerm_resource_group.onprem-vnet-rg.name
+  network_interface_ids = [azurerm_network_interface.onprem-dc-nic.id]
+  vm_size               = var.vmsize
+
+  storage_image_reference {
+    offer     = "WindowsServer"
+    publisher = "MicrosoftWindowsServer"
+    sku       = "2019-Datacenter"
+    version   = "latest"
+  }
+
+  storage_os_disk {
+    name              = "onprem-dc-osdisk"
+    caching           = "ReadWrite"
+    create_option     = "FromImage"
+    managed_disk_type = "Standard_LRS"
+  }
+
+  os_profile {
+    computer_name  = "${local.prefix-onprem}-vm"
+    admin_username = var.username
+    admin_password = var.password
+  }
+
+  os_profile_windows_config {
+    provision_vm_agent = true
+  }
+
+  tags = {
+    environment = local.prefix-onprem
+  }
+}
+
+resource "azurerm_public_ip" "onprem-vpn-gateway-pip" {
+  name                = "${local.prefix-onprem}-vpn-gateway-pip"
   location            = azurerm_resource_group.onprem-vnet-rg.location
   resource_group_name = azurerm_resource_group.onprem-vnet-rg.name
 
@@ -132,7 +188,7 @@ resource "azurerm_public_ip" "onprem-vpn-gateway1-pip" {
 }
 
 resource "azurerm_virtual_network_gateway" "onprem-vpn-gateway" {
-  name                = "onprem-vpn-gateway1"
+  name                = "onprem-vpn-gateway"
   location            = azurerm_resource_group.onprem-vnet-rg.location
   resource_group_name = azurerm_resource_group.onprem-vnet-rg.name
 
@@ -145,10 +201,10 @@ resource "azurerm_virtual_network_gateway" "onprem-vpn-gateway" {
 
   ip_configuration {
     name                          = "vnetGatewayConfig"
-    public_ip_address_id          = azurerm_public_ip.onprem-vpn-gateway1-pip.id
+    public_ip_address_id          = azurerm_public_ip.onprem-vpn-gateway-pip.id
     private_ip_address_allocation = "Dynamic"
     subnet_id                     = azurerm_subnet.onprem-gateway-subnet.id
   }
-  depends_on = [azurerm_public_ip.onprem-vpn-gateway1-pip]
+  depends_on = [azurerm_public_ip.onprem-vpn-gateway-pip]
 
 }

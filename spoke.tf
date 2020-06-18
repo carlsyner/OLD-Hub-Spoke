@@ -27,13 +27,6 @@ resource "azurerm_subnet" "spoke-mgmt" {
   address_prefix       = "10.1.0.64/27"
 }
 
-resource "azurerm_subnet" "spoke-workload" {
-  name                 = "workload"
-  resource_group_name  = azurerm_resource_group.spoke-vnet-rg.name
-  virtual_network_name = azurerm_virtual_network.spoke-vnet.name
-  address_prefix       = "10.1.1.0/24"
-}
-
 resource "azurerm_virtual_network_peering" "spoke-hub-peer" {
   name                      = "spoke-hub-peer"
   resource_group_name       = azurerm_resource_group.spoke-vnet-rg.name
@@ -47,11 +40,11 @@ resource "azurerm_virtual_network_peering" "spoke-hub-peer" {
   depends_on = [azurerm_virtual_network.spoke-vnet, azurerm_virtual_network.hub-vnet , azurerm_virtual_network_gateway.hub-vnet-gateway]
 }
 
-resource "azurerm_network_interface" "spoke-nic" {
-  name                 = "${local.prefix-spoke}-nic"
+resource "azurerm_network_interface" "az-mgmt-nic" {
+  name                 = "az-mgmt-nic"
   location             = azurerm_resource_group.spoke-vnet-rg.location
   resource_group_name  = azurerm_resource_group.spoke-vnet-rg.name
-  enable_ip_forwarding = true
+  enable_ip_forwarding = false
 
   ip_configuration {
     name                          = local.prefix-spoke
@@ -60,11 +53,11 @@ resource "azurerm_network_interface" "spoke-nic" {
   }
 }
 
-resource "azurerm_virtual_machine" "spoke-vm" {
-  name                  = "${local.prefix-spoke}-vm"
+resource "azurerm_virtual_machine" "az-mgmt-vm" {
+  name                  = "az-mgmt-vm"
   location              = azurerm_resource_group.spoke-vnet-rg.location
   resource_group_name   = azurerm_resource_group.spoke-vnet-rg.name
-  network_interface_ids = [azurerm_network_interface.spoke-nic.id]
+  network_interface_ids = [azurerm_network_interface.az-mgmt-nic.id]
   vm_size               = var.vmsize
 
   storage_image_reference {
@@ -75,7 +68,7 @@ resource "azurerm_virtual_machine" "spoke-vm" {
   }
 
   storage_os_disk {
-    name              = "myosdisk1"
+    name              = "az-mgmt-osdisk"
     caching           = "ReadWrite"
     create_option     = "FromImage"
     managed_disk_type = "Standard_LRS"
@@ -102,7 +95,7 @@ resource "azurerm_virtual_network_peering" "hub-spoke-peer" {
   virtual_network_name      = azurerm_virtual_network.hub-vnet.name
   remote_virtual_network_id = azurerm_virtual_network.spoke-vnet.id
   allow_virtual_network_access = true
-  allow_forwarded_traffic   = false
+  allow_forwarded_traffic   = true
   allow_gateway_transit     = true
   use_remote_gateways       = false
   depends_on = [azurerm_virtual_network.spoke-vnet, azurerm_virtual_network.hub-vnet, azurerm_virtual_network_gateway.hub-vnet-gateway]

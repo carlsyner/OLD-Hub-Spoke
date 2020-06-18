@@ -28,29 +28,22 @@ resource "azurerm_subnet" "hub-gateway-subnet" {
   address_prefix       = "10.0.255.224/27"
 }
 
-resource "azurerm_subnet" "hub-mgmt" {
-  name                 = "mgmt"
-  resource_group_name  = azurerm_resource_group.hub-vnet-rg.name
-  virtual_network_name = azurerm_virtual_network.hub-vnet.name
-  address_prefix       = "10.0.0.64/27"
-}
-
-resource "azurerm_subnet" "hub-dmz" {
-  name                 = "dmz"
+resource "azurerm_subnet" "hub-dc" {
+  name                 = "dc"
   resource_group_name  = azurerm_resource_group.hub-vnet-rg.name
   virtual_network_name = azurerm_virtual_network.hub-vnet.name
   address_prefix       = "10.0.0.32/27"
 }
 
-resource "azurerm_network_interface" "hub-nic" {
-  name                 = "${local.prefix-hub}-nic"
+resource "azurerm_network_interface" "az-dc-nic" {
+  name                 = "az-dc-nic"
   location             = azurerm_resource_group.hub-vnet-rg.location
   resource_group_name  = azurerm_resource_group.hub-vnet-rg.name
-  enable_ip_forwarding = true
+  enable_ip_forwarding = false
 
   ip_configuration {
     name                          = local.prefix-hub
-    subnet_id                     = azurerm_subnet.hub-mgmt.id
+    subnet_id                     = azurerm_subnet.hub-dc.id
     private_ip_address_allocation = "Dynamic"
   }
 
@@ -60,11 +53,11 @@ resource "azurerm_network_interface" "hub-nic" {
 }
 
 #Virtual Machine
-resource "azurerm_virtual_machine" "hub-vm" {
-  name                  = "${local.prefix-hub}-vm"
+resource "azurerm_virtual_machine" "az-dc-vm" {
+  name                  = "az-dc-vm"
   location              = azurerm_resource_group.hub-vnet-rg.location
   resource_group_name   = azurerm_resource_group.hub-vnet-rg.name
-  network_interface_ids = [azurerm_network_interface.hub-nic.id]
+  network_interface_ids = [azurerm_network_interface.az-dc-nic.id]
   vm_size               = var.vmsize
 
   storage_image_reference {
@@ -75,7 +68,7 @@ resource "azurerm_virtual_machine" "hub-vm" {
   }
 
   storage_os_disk {
-    name              = "myosdisk1"
+    name              = "az-dc-osdisk"
     caching           = "ReadWrite"
     create_option     = "FromImage"
     managed_disk_type = "Standard_LRS"
@@ -97,8 +90,8 @@ resource "azurerm_virtual_machine" "hub-vm" {
 }
 
 # Virtual Network Gateway
-resource "azurerm_public_ip" "hub-vpn-gateway1-pip" {
-  name                = "hub-vpn-gateway1-pip"
+resource "azurerm_public_ip" "hub-vpn-gateway-pip" {
+  name                = "hub-vpn-gateway-pip"
   location            = azurerm_resource_group.hub-vnet-rg.location
   resource_group_name = azurerm_resource_group.hub-vnet-rg.name
 
@@ -106,7 +99,7 @@ resource "azurerm_public_ip" "hub-vpn-gateway1-pip" {
 }
 
 resource "azurerm_virtual_network_gateway" "hub-vnet-gateway" {
-  name                = "hub-vpn-gateway1"
+  name                = "hub-vpn-gateway"
   location            = azurerm_resource_group.hub-vnet-rg.location
   resource_group_name = azurerm_resource_group.hub-vnet-rg.name
 
@@ -119,11 +112,11 @@ resource "azurerm_virtual_network_gateway" "hub-vnet-gateway" {
 
   ip_configuration {
     name                          = "vnetGatewayConfig"
-    public_ip_address_id          = azurerm_public_ip.hub-vpn-gateway1-pip.id
+    public_ip_address_id          = azurerm_public_ip.hub-vpn-gateway-pip.id
     private_ip_address_allocation = "Dynamic"
     subnet_id                     = azurerm_subnet.hub-gateway-subnet.id
   }
-  depends_on = [azurerm_public_ip.hub-vpn-gateway1-pip]
+  depends_on = [azurerm_public_ip.hub-vpn-gateway-pip]
 }
 
 resource "azurerm_virtual_network_gateway_connection" "hub-onprem-conn" {
