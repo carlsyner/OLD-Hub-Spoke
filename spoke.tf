@@ -4,10 +4,18 @@ locals {
   prefix-spoke         = "spoke"
 }
 
+#######################################################################
+## Create Resource Group
+#######################################################################
+
 resource "azurerm_resource_group" "spoke-vnet-rg" {
   name     = local.spoke-resource-group
   location = local.spoke-location
 }
+
+#######################################################################
+## Create Virtual Network
+#######################################################################
 
 resource "azurerm_virtual_network" "spoke-vnet" {
   name                = "spoke-vnet"
@@ -20,12 +28,20 @@ resource "azurerm_virtual_network" "spoke-vnet" {
   }
 }
 
+#######################################################################
+## Create Subnets
+#######################################################################
+
 resource "azurerm_subnet" "spoke-mgmt" {
   name                 = "mgmt"
   resource_group_name  = azurerm_resource_group.spoke-vnet-rg.name
   virtual_network_name = azurerm_virtual_network.spoke-vnet.name
   address_prefix       = "10.1.0.64/27"
 }
+
+#######################################################################
+## Create VNet Peering
+#######################################################################
 
 resource "azurerm_virtual_network_peering" "spoke-hub-peer" {
   name                      = "spoke-hub-peer"
@@ -40,6 +56,10 @@ resource "azurerm_virtual_network_peering" "spoke-hub-peer" {
   depends_on = [azurerm_virtual_network.spoke-vnet, azurerm_virtual_network.hub-vnet , azurerm_virtual_network_gateway.hub-vnet-gateway]
 }
 
+#######################################################################
+## Create Network Interface
+#######################################################################
+
 resource "azurerm_network_interface" "az-mgmt-nic" {
   name                 = "az-mgmt-nic"
   location             = azurerm_resource_group.spoke-vnet-rg.location
@@ -52,6 +72,10 @@ resource "azurerm_network_interface" "az-mgmt-nic" {
     private_ip_address_allocation = "Dynamic"
   }
 }
+
+#######################################################################
+## Create Virtual Machine
+#######################################################################
 
 resource "azurerm_virtual_machine" "az-mgmt-vm" {
   name                  = "az-mgmt-vm"
@@ -75,7 +99,7 @@ resource "azurerm_virtual_machine" "az-mgmt-vm" {
   }
 
   os_profile {
-    computer_name  = "${local.prefix-spoke}-vm"
+    computer_name  = "az-mgmt-vm"
     admin_username = var.username
     admin_password = var.password
   }
@@ -88,6 +112,10 @@ resource "azurerm_virtual_machine" "az-mgmt-vm" {
     environment = local.prefix-spoke
   }
 }
+
+#######################################################################
+## Create Network Peering
+#######################################################################
 
 resource "azurerm_virtual_network_peering" "hub-spoke-peer" {
   name                      = "hub-spoke-peer"

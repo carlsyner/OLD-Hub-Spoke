@@ -5,10 +5,18 @@ locals {
   shared-key         = "4-v3ry-53cr37-1p53c-5h4r3d-k3y"
 }
 
+#######################################################################
+## Create Resource Groups
+#######################################################################
+
 resource "azurerm_resource_group" "hub-vnet-rg" {
   name     = local.hub-resource-group
   location = local.hub-location
 }
+
+#######################################################################
+## Create Virtual Networks
+#######################################################################
 
 resource "azurerm_virtual_network" "hub-vnet" {
   name                = "${local.prefix-hub}-vnet"
@@ -20,6 +28,10 @@ resource "azurerm_virtual_network" "hub-vnet" {
     environment = "hub-spoke"
   }
 }
+
+#######################################################################
+## Create Subnets
+#######################################################################
 
 resource "azurerm_subnet" "hub-gateway-subnet" {
   name                 = "GatewaySubnet"
@@ -34,6 +46,10 @@ resource "azurerm_subnet" "hub-dc" {
   virtual_network_name = azurerm_virtual_network.hub-vnet.name
   address_prefix       = "10.0.0.32/27"
 }
+
+#######################################################################
+## Create Network Interface
+#######################################################################
 
 resource "azurerm_network_interface" "az-dc-nic" {
   name                 = "az-dc-nic"
@@ -52,7 +68,10 @@ resource "azurerm_network_interface" "az-dc-nic" {
   }
 }
 
-#Virtual Machine
+#######################################################################
+## Create Virtual Machine
+#######################################################################
+
 resource "azurerm_virtual_machine" "az-dc-vm" {
   name                  = "az-dc-vm"
   location              = azurerm_resource_group.hub-vnet-rg.location
@@ -75,7 +94,7 @@ resource "azurerm_virtual_machine" "az-dc-vm" {
   }
 
   os_profile {
-    computer_name  = "${local.prefix-hub}-vm"
+    computer_name  = "az-dc-vm"
     admin_username = var.username
     admin_password = var.password
   }
@@ -89,7 +108,10 @@ resource "azurerm_virtual_machine" "az-dc-vm" {
   }
 }
 
-# Virtual Network Gateway
+#############################################################################
+## Create Virtual Network Gateway
+#############################################################################
+
 resource "azurerm_public_ip" "hub-vpn-gateway-pip" {
   name                = "hub-vpn-gateway-pip"
   location            = azurerm_resource_group.hub-vnet-rg.location
@@ -118,6 +140,10 @@ resource "azurerm_virtual_network_gateway" "hub-vnet-gateway" {
   }
   depends_on = [azurerm_public_ip.hub-vpn-gateway-pip]
 }
+
+#######################################################################
+## Create Connections
+#######################################################################
 
 resource "azurerm_virtual_network_gateway_connection" "hub-onprem-conn" {
   name                = "hub-onprem-conn"

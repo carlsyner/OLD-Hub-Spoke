@@ -4,10 +4,18 @@ locals {
   prefix-onprem         = "onprem"
 }
 
+#######################################################################
+## Create Resource Group
+#######################################################################
+
 resource "azurerm_resource_group" "onprem-vnet-rg" {
   name     = local.onprem-resource-group
   location = local.onprem-location
 }
+
+#######################################################################
+## Create Virtual Network
+#######################################################################
 
 resource "azurerm_virtual_network" "onprem-vnet" {
   name                = "onprem-vnet"
@@ -19,6 +27,10 @@ resource "azurerm_virtual_network" "onprem-vnet" {
     environment = local.prefix-onprem
   }
 }
+
+#######################################################################
+## Create Subnets
+#######################################################################
 
 resource "azurerm_subnet" "onprem-gateway-subnet" {
   name                 = "GatewaySubnet"
@@ -41,6 +53,10 @@ resource "azurerm_subnet" "onprem-dc" {
   address_prefix       = "192.168.2.0/27"
 }
 
+#######################################################################
+## Create Public IPs
+#######################################################################
+
 resource "azurerm_public_ip" "onprem-mgmt-pip" {
     name                 = "onprem-mgmt-pip"
     location            = azurerm_resource_group.onprem-vnet-rg.location
@@ -51,6 +67,10 @@ resource "azurerm_public_ip" "onprem-mgmt-pip" {
         environment = local.prefix-onprem
     }
 }
+
+#######################################################################
+## Create Network Interfaces
+#######################################################################
 
 resource "azurerm_network_interface" "onprem-mgmt-nic" {
   name                 = "onprem-mgmt-nic"
@@ -79,7 +99,10 @@ resource "azurerm_network_interface" "onprem-dc-nic" {
   }
 }
 
-# Create Network Security Group and rule
+##########################################################
+## Create Network Security Group and rule
+###########################################################
+
 resource "azurerm_network_security_group" "onprem-mgmt-nsg" {
     name                = "onprem-mgmt-nsg"
     location            = azurerm_resource_group.onprem-vnet-rg.location
@@ -107,6 +130,10 @@ resource "azurerm_subnet_network_security_group_association" "mgmt-nsg-associati
   network_security_group_id = azurerm_network_security_group.onprem-mgmt-nsg.id
 }
 
+#######################################################################
+## Create Virtual Machines
+#######################################################################
+
 resource "azurerm_virtual_machine" "onprem-mgmt-vm" {
   name                  = "onprem-mgmt-vm"
   location              = azurerm_resource_group.onprem-vnet-rg.location
@@ -129,7 +156,7 @@ resource "azurerm_virtual_machine" "onprem-mgmt-vm" {
   }
 
   os_profile {
-    computer_name  = "${local.prefix-onprem}-vm"
+    computer_name  = "onprem-mgmt-vm"
     admin_username = var.username
     admin_password = var.password
   }
@@ -165,7 +192,7 @@ resource "azurerm_virtual_machine" "onprem-dc-vm" {
   }
 
   os_profile {
-    computer_name  = "${local.prefix-onprem}-vm"
+    computer_name  = "onprem-dc-vm"
     admin_username = var.username
     admin_password = var.password
   }
@@ -178,6 +205,10 @@ resource "azurerm_virtual_machine" "onprem-dc-vm" {
     environment = local.prefix-onprem
   }
 }
+
+#######################################################################
+## Create Virtual Network Gateway
+#######################################################################
 
 resource "azurerm_public_ip" "onprem-vpn-gateway-pip" {
   name                = "${local.prefix-onprem}-vpn-gateway-pip"
