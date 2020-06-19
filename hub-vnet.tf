@@ -41,10 +41,10 @@ resource "azurerm_subnet" "hub-gateway-subnet" {
 }
 
 resource "azurerm_subnet" "hub-dc" {
-  name                 = "dc"
+  name                 = "DomainControllerSubnet"
   resource_group_name  = azurerm_resource_group.hub-vnet-rg.name
   virtual_network_name = azurerm_virtual_network.hub-vnet.name
-  address_prefix       = "10.0.0.32/27"
+  address_prefix       = "10.0.0.0/24"
 }
 
 #######################################################################

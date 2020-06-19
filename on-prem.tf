@@ -22,6 +22,7 @@ resource "azurerm_virtual_network" "onprem-vnet" {
   location            = azurerm_resource_group.onprem-vnet-rg.location
   resource_group_name = azurerm_resource_group.onprem-vnet-rg.name
   address_space       = ["192.168.0.0/16"]
+  dns_servers         = ["192.168.0.4"]
 
   tags = {
     environment = local.prefix-onprem
@@ -39,18 +40,11 @@ resource "azurerm_subnet" "onprem-gateway-subnet" {
   address_prefix       = "192.168.255.224/27"
 }
 
-resource "azurerm_subnet" "onprem-mgmt" {
-  name                 = "mgmt"
+resource "azurerm_subnet" "onprem-infrastructure-subnet" {
+  name                 = "InfrastructureSubnet"
   resource_group_name  = azurerm_resource_group.onprem-vnet-rg.name
   virtual_network_name = azurerm_virtual_network.onprem-vnet.name
-  address_prefix       = "192.168.1.128/25"
-}
-
-resource "azurerm_subnet" "onprem-dc" {
-  name                 = "dc"
-  resource_group_name  = azurerm_resource_group.onprem-vnet-rg.name
-  virtual_network_name = azurerm_virtual_network.onprem-vnet.name
-  address_prefix       = "192.168.2.0/27"
+  address_prefix       = "192.168.0.0/24"
 }
 
 #######################################################################
@@ -72,20 +66,6 @@ resource "azurerm_public_ip" "onprem-mgmt-pip" {
 ## Create Network Interfaces
 #######################################################################
 
-resource "azurerm_network_interface" "onprem-mgmt-nic" {
-  name                 = "onprem-mgmt-nic"
-  location             = azurerm_resource_group.onprem-vnet-rg.location
-  resource_group_name  = azurerm_resource_group.onprem-vnet-rg.name
-  enable_ip_forwarding = false
-
-  ip_configuration {
-    name                          = local.prefix-onprem
-    subnet_id                     = azurerm_subnet.onprem-mgmt.id
-    private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = azurerm_public_ip.onprem-mgmt-pip.id
-  }
-}
-
 resource "azurerm_network_interface" "onprem-dc-nic" {
   name                 = "onprem-dc-nic"
   location             = azurerm_resource_group.onprem-vnet-rg.location
@@ -94,10 +74,25 @@ resource "azurerm_network_interface" "onprem-dc-nic" {
 
   ip_configuration {
     name                          = local.prefix-onprem
-    subnet_id                     = azurerm_subnet.onprem-dc.id
+    subnet_id                     = azurerm_subnet.onprem-infrastructure-subnet.id
     private_ip_address_allocation = "Dynamic"
   }
 }
+
+resource "azurerm_network_interface" "onprem-mgmt-nic" {
+  name                 = "onprem-mgmt-nic"
+  location             = azurerm_resource_group.onprem-vnet-rg.location
+  resource_group_name  = azurerm_resource_group.onprem-vnet-rg.name
+  enable_ip_forwarding = false
+
+  ip_configuration {
+    name                          = local.prefix-onprem
+    subnet_id                     = azurerm_subnet.onprem-infrastructure-subnet.id
+    private_ip_address_allocation = "Dynamic"
+    public_ip_address_id          = azurerm_public_ip.onprem-mgmt-pip.id
+  }
+}
+
 
 ##########################################################
 ## Create Network Security Group and rule
@@ -126,49 +121,13 @@ resource "azurerm_network_security_group" "onprem-mgmt-nsg" {
 }
 
 resource "azurerm_subnet_network_security_group_association" "mgmt-nsg-association" {
-  subnet_id                 = azurerm_subnet.onprem-mgmt.id
+  subnet_id                 = azurerm_subnet.onprem-infrastructure-subnet.id
   network_security_group_id = azurerm_network_security_group.onprem-mgmt-nsg.id
 }
 
 #######################################################################
 ## Create Virtual Machines
 #######################################################################
-
-resource "azurerm_virtual_machine" "onprem-mgmt-vm" {
-  name                  = "onprem-mgmt-vm"
-  location              = azurerm_resource_group.onprem-vnet-rg.location
-  resource_group_name   = azurerm_resource_group.onprem-vnet-rg.name
-  network_interface_ids = [azurerm_network_interface.onprem-mgmt-nic.id]
-  vm_size               = var.vmsize
-
-  storage_image_reference {
-    offer     = "WindowsServer"
-    publisher = "MicrosoftWindowsServer"
-    sku       = "2019-Datacenter"
-    version   = "latest"
-  }
-
-  storage_os_disk {
-    name              = "onprem-mgmt-osdisk"
-    caching           = "ReadWrite"
-    create_option     = "FromImage"
-    managed_disk_type = "Standard_LRS"
-  }
-
-  os_profile {
-    computer_name  = "onprem-mgmt-vm"
-    admin_username = var.username
-    admin_password = var.password
-  }
-
-  os_profile_windows_config {
-    provision_vm_agent = true
-  }
-
-  tags = {
-    environment = local.prefix-onprem
-  }
-}
 
 resource "azurerm_virtual_machine" "onprem-dc-vm" {
   name                  = "onprem-dc-vm"
@@ -193,6 +152,42 @@ resource "azurerm_virtual_machine" "onprem-dc-vm" {
 
   os_profile {
     computer_name  = "onprem-dc-vm"
+    admin_username = var.username
+    admin_password = var.password
+  }
+
+  os_profile_windows_config {
+    provision_vm_agent = true
+  }
+
+  tags = {
+    environment = local.prefix-onprem
+  }
+}
+
+resource "azurerm_virtual_machine" "onprem-mgmt-vm" {
+  name                  = "onprem-mgmt-vm"
+  location              = azurerm_resource_group.onprem-vnet-rg.location
+  resource_group_name   = azurerm_resource_group.onprem-vnet-rg.name
+  network_interface_ids = [azurerm_network_interface.onprem-mgmt-nic.id]
+  vm_size               = var.vmsize
+
+  storage_image_reference {
+    offer     = "WindowsServer"
+    publisher = "MicrosoftWindowsServer"
+    sku       = "2019-Datacenter"
+    version   = "latest"
+  }
+
+  storage_os_disk {
+    name              = "onprem-mgmt-osdisk"
+    caching           = "ReadWrite"
+    create_option     = "FromImage"
+    managed_disk_type = "Standard_LRS"
+  }
+
+  os_profile {
+    computer_name  = "onprem-mgmt-vm"
     admin_username = var.username
     admin_password = var.password
   }

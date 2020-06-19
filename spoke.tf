@@ -32,11 +32,11 @@ resource "azurerm_virtual_network" "spoke-vnet" {
 ## Create Subnets
 #######################################################################
 
-resource "azurerm_subnet" "spoke-mgmt" {
-  name                 = "mgmt"
+resource "azurerm_subnet" "spoke-infrastructure" {
+  name                 = "InfrastructureSubnet"
   resource_group_name  = azurerm_resource_group.spoke-vnet-rg.name
   virtual_network_name = azurerm_virtual_network.spoke-vnet.name
-  address_prefix       = "10.1.0.64/27"
+  address_prefix       = "10.1.0.0/24"
 }
 
 #######################################################################
@@ -68,7 +68,7 @@ resource "azurerm_network_interface" "az-mgmt-nic" {
 
   ip_configuration {
     name                          = local.prefix-spoke
-    subnet_id                     = azurerm_subnet.spoke-mgmt.id
+    subnet_id                     = azurerm_subnet.spoke-infrastructure.id
     private_ip_address_allocation = "Dynamic"
   }
 }
