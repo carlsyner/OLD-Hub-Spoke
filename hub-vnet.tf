@@ -40,8 +40,8 @@ resource "azurerm_subnet" "hub-gateway-subnet" {
   address_prefix       = "10.0.255.224/27"
 }
 
-resource "azurerm_subnet" "hub-dc" {
-  name                 = "DomainControllerSubnet"
+resource "azurerm_subnet" "hub-dns" {
+  name                 = "DNSSubnet"
   resource_group_name  = azurerm_resource_group.hub-vnet-rg.name
   virtual_network_name = azurerm_virtual_network.hub-vnet.name
   address_prefix       = "10.0.0.0/24"
@@ -51,15 +51,15 @@ resource "azurerm_subnet" "hub-dc" {
 ## Create Network Interface
 #######################################################################
 
-resource "azurerm_network_interface" "az-dc-nic" {
-  name                 = "az-dc-nic"
+resource "azurerm_network_interface" "az-dns-nic" {
+  name                 = "az-dns-nic"
   location             = azurerm_resource_group.hub-vnet-rg.location
   resource_group_name  = azurerm_resource_group.hub-vnet-rg.name
   enable_ip_forwarding = false
 
   ip_configuration {
     name                          = local.prefix-hub
-    subnet_id                     = azurerm_subnet.hub-dc.id
+    subnet_id                     = azurerm_subnet.hub-dns.id
     private_ip_address_allocation = "Dynamic"
   }
 
@@ -72,11 +72,11 @@ resource "azurerm_network_interface" "az-dc-nic" {
 ## Create Virtual Machine
 #######################################################################
 
-resource "azurerm_virtual_machine" "az-dc-vm" {
-  name                  = "az-dc-vm"
+resource "azurerm_virtual_machine" "az-dns-vm" {
+  name                  = "az-dns-vm"
   location              = azurerm_resource_group.hub-vnet-rg.location
   resource_group_name   = azurerm_resource_group.hub-vnet-rg.name
-  network_interface_ids = [azurerm_network_interface.az-dc-nic.id]
+  network_interface_ids = [azurerm_network_interface.az-dns-nic.id]
   vm_size               = var.vmsize
 
   storage_image_reference {
@@ -87,14 +87,14 @@ resource "azurerm_virtual_machine" "az-dc-vm" {
   }
 
   storage_os_disk {
-    name              = "az-dc-osdisk"
+    name              = "az-dns-osdisk"
     caching           = "ReadWrite"
     create_option     = "FromImage"
     managed_disk_type = "Standard_LRS"
   }
 
   os_profile {
-    computer_name  = "az-dc-vm"
+    computer_name  = "az-dns-vm"
     admin_username = var.username
     admin_password = var.password
   }

@@ -1,5 +1,5 @@
 locals {
-  onprem-location       = var.onpremlocation
+  onprem-location       = var.location
   onprem-resource-group = "private-endpoint-openhack-onprem-rg"
   prefix-onprem         = "onprem"
 }
@@ -66,8 +66,8 @@ resource "azurerm_public_ip" "onprem-mgmt-pip" {
 ## Create Network Interfaces
 #######################################################################
 
-resource "azurerm_network_interface" "onprem-dc-nic" {
-  name                 = "onprem-dc-nic"
+resource "azurerm_network_interface" "onprem-dns-nic" {
+  name                 = "onprem-dns-nic"
   location             = azurerm_resource_group.onprem-vnet-rg.location
   resource_group_name  = azurerm_resource_group.onprem-vnet-rg.name
   enable_ip_forwarding = false
@@ -129,11 +129,11 @@ resource "azurerm_subnet_network_security_group_association" "mgmt-nsg-associati
 ## Create Virtual Machines
 #######################################################################
 
-resource "azurerm_virtual_machine" "onprem-dc-vm" {
-  name                  = "onprem-dc-vm"
+resource "azurerm_virtual_machine" "onprem-dns-vm" {
+  name                  = "onprem-dns-vm"
   location              = azurerm_resource_group.onprem-vnet-rg.location
   resource_group_name   = azurerm_resource_group.onprem-vnet-rg.name
-  network_interface_ids = [azurerm_network_interface.onprem-dc-nic.id]
+  network_interface_ids = [azurerm_network_interface.onprem-dns-nic.id]
   vm_size               = var.vmsize
 
   storage_image_reference {
@@ -144,14 +144,14 @@ resource "azurerm_virtual_machine" "onprem-dc-vm" {
   }
 
   storage_os_disk {
-    name              = "onprem-dc-osdisk"
+    name              = "onprem-dns-osdisk"
     caching           = "ReadWrite"
     create_option     = "FromImage"
     managed_disk_type = "Standard_LRS"
   }
 
   os_profile {
-    computer_name  = "onprem-dc-vm"
+    computer_name  = "onprem-dns-vm"
     admin_username = var.username
     admin_password = var.password
   }
