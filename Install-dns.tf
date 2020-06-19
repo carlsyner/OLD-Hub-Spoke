@@ -22,7 +22,7 @@ resource "azurerm_virtual_machine_extension" "install-dns-onprem-dc" {
 
    settings = <<SETTINGS
     {
-        "commandToExecute": "powershell.exe -ExecutionPolicy Unrestricted Install-WindowsFeature -Name DNS -IncludeAllSubFeature -IncludeManagementTools; exit 0"
+        "commandToExecute": "powershell.exe -ExecutionPolicy Unrestricted Install-WindowsFeature -Name DNS -IncludeAllSubFeature -IncludeManagementTools; Add-DnsServerForwarder -IPAddress 8.8.8.8 -PassThru; exit 0"
     }
 SETTINGS
 }
