@@ -75,8 +75,9 @@ resource "azurerm_network_interface" "onprem-dns-nic" {
   ip_configuration {
     name                          = local.prefix-onprem
     subnet_id                     = azurerm_subnet.onprem-infrastructure-subnet.id
-    private_ip_address_allocation = "Dynamic"
-  }
+    private_ip_address_allocation = "static"
+    private_ip_address            = "192.168.0.4"
+      }
 }
 
 resource "azurerm_network_interface" "onprem-mgmt-nic" {
