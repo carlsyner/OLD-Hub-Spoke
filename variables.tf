@@ -1,15 +1,18 @@
 variable "location" {
-  description = "Location of the network"
+  description = "Location to deploy resources"
+  type        = "string"
   default     = "WestEurope"
 }
 
 variable "username" {
   description = "Username for Virtual Machines"
+  type        = "string"
   default     = "AzureAdmin"
 }
 
 variable "password" {
   description = "Password for Virtual Machines"
+  type        = "string"
   default     = "Password1234!"
 }
 

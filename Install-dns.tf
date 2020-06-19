@@ -1,5 +1,5 @@
 ##########################################################
-## Create AD Forest and Onprem Domain Controller
+## Install DNS role and tool on onprem and AZ DNS servers
 ##########################################################
 
 
