@@ -5,7 +5,7 @@ variable "location" {
 }
 
 variable "username" {
-  description = "Username for Virtual Machines"
+  description = "Please enter Username for the Virtual Machines"
   type        = string
   default     = "AzureAdmin"
 }
@@ -13,8 +13,7 @@ variable "username" {
 variable "password" {
   description = "Password for Virtual Machines"
   type        = string
-  default     = "Password1234!"
-}
+  }
 
 variable "vmsize" {
   description = "Size of the VMs"
