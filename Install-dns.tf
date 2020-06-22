@@ -2,16 +2,6 @@
 ## Install DNS role and tool on onprem and AZ DNS servers
 ##########################################################
 
-
-locals { 
-#import_command       = "Import-Module ADDSDeployment"
-#password_command     = "$password = ConvertTo-SecureString var.password -AsPlainText -Force"
-#install_ad_command   = "Add-WindowsFeature -name ad-domain-services -IncludeManagementTools"
-#configure_ad_command = "Install-ADDSForest -CreateDnsDelegation:$false -DomainMode 7 -DomainName contoso.com -DomainNetbiosName contoso -ForestMode 7 -InstallDns:$true -SafeModeAdministratorPassword $password -Force:$true"
-#exit_code_hack       = "exit 0"
-#powershell_command   = "${local.import_command}; ${local.password_command}; ${local.install_ad_command}; ${local.configure_ad_command}; ${local.shutdown_command}; ${local.exit_code_hack}"
-}
-
 resource "azurerm_virtual_machine_extension" "install-dns-onprem-dc" {
     
   name                 = "install-dns-onprem-dc"

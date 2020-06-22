@@ -13,7 +13,7 @@ variable "username" {
 variable "password" {
   description = "Please enter a Password for the Virtual Machines"
   type        = string
-  }
+    }
 
 variable "vmsize" {
   description = "Size of the VMs"
