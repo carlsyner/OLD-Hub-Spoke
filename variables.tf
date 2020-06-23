@@ -20,7 +20,3 @@ variable "vmsize" {
   default     = "Standard_A2_v2"
 }
 
-variable "onprem-vnet" {
-  description = "OnPrem Virtual Network"
-  default     = "onprem-vnet"
-}
