@@ -4,6 +4,7 @@
 
 locals {
     onprem-rg             = "private-endpoint-openhack-onprem-rg"
+     onprem-vnet-name     = "onprem-vnet"
   }
 
 #######################################################################
@@ -25,7 +26,7 @@ resource "azurerm_resource_group" "private-endpoint-openhack-onprem-rg" {
 #######################################################################
 
 resource "azurerm_virtual_network" "onprem-vnet" {
-  name                = "onprem-vnet"
+  name                = local.onprem-vnet-name
   location            = var.location
   resource_group_name = local.onprem-rg
   address_space       = ["192.168.0.0/16"]
@@ -44,14 +45,14 @@ resource "azurerm_virtual_network" "onprem-vnet" {
 resource "azurerm_subnet" "onprem-gateway-subnet" {
   name                 = "GatewaySubnet"
   resource_group_name  = local.onprem-rg
-  virtual_network_name = "onprem-vnet"
+  virtual_network_name = azurerm_virtual_network.onprem-vnet.name
   address_prefix       = "192.168.255.224/27"
 }
 
 resource "azurerm_subnet" "onprem-infrastructure-subnet" {
   name                 = "InfrastructureSubnet"
   resource_group_name  = local.onprem-rg
-  virtual_network_name = "onprem-vnet"
+  virtual_network_name = azurerm_virtual_network.onprem-vnet.name
   address_prefix       = "192.168.0.0/24"
 }
 

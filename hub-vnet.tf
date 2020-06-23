@@ -5,13 +5,14 @@
 locals {
   hub-rg               = "private-endpoint-openhack-hub-rg"
   shared-key           = "4-v3ry-53cr37-1p53c-5h4r3d-k3y"
+  hub-vnet-name        = "hub-vnet"
 }
 
 #######################################################################
 ## Create Resource Groups
 #######################################################################
 
-resource "azurerm_resource_group" "hub-vnet-rg" {
+resource "azurerm_resource_group" "private-endpoint-openhack-hub-rg" {
   name     = local.hub-rg
   location = var.location
 
@@ -27,7 +28,7 @@ resource "azurerm_resource_group" "hub-vnet-rg" {
 #######################################################################
 
 resource "azurerm_virtual_network" "hub-vnet" {
-  name                = "hub-vnet"
+  name                = local.hub-vnet-name
   location            = var.location
   resource_group_name = local.hub-rg
   address_space       = ["10.0.0.0/16"]
@@ -45,15 +46,31 @@ resource "azurerm_virtual_network" "hub-vnet" {
 resource "azurerm_subnet" "hub-gateway-subnet" {
   name                 = "GatewaySubnet"
   resource_group_name  = local.hub-rg
-  virtual_network_name = "hub-vnet"
+  virtual_network_name = azurerm_virtual_network.hub-vnet.name
   address_prefix       = "10.0.255.224/27"
 }
 
 resource "azurerm_subnet" "hub-dns" {
   name                 = "DNSSubnet"
   resource_group_name  = local.hub-rg
-  virtual_network_name = "hub-vnet"
+  virtual_network_name = azurerm_virtual_network.hub-vnet.name
   address_prefix       = "10.0.0.0/24"
+}
+
+#######################################################################
+## Create Network Peering
+#######################################################################
+
+resource "azurerm_virtual_network_peering" "hub-spoke-peer" {
+  name                      = "hub-spoke-peer"
+  resource_group_name       = local.hub-rg
+  virtual_network_name      = local.hub-vnet-name
+  remote_virtual_network_id = azurerm_virtual_network.spoke-vnet.id
+  allow_virtual_network_access = true
+  allow_forwarded_traffic   = true
+  allow_gateway_transit     = true
+  use_remote_gateways       = false
+  depends_on = [azurerm_virtual_network.spoke-vnet, azurerm_virtual_network.hub-vnet, azurerm_virtual_network_gateway.hub-vnet-gateway]
 }
 
 #######################################################################
