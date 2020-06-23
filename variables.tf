@@ -19,3 +19,18 @@ variable "vmsize" {
   description = "Size of the VMs"
   default     = "Standard_A2_v2"
 }
+
+variable "onprem-vnet" {
+  description = "onprem vent"
+  default     = "onprem-vnet"
+}
+
+variable "hub-vnet" {
+  description = "hub vent"
+  default     = "hub-vnet"
+}
+
+variable "spoke-vnet" {
+  description = "spoke vent"
+  default     = "spoke-vnet"
+}

@@ -3,9 +3,7 @@
 #######################################################################
 
 locals {
-  hub-rg               = "private-endpoint-openhack-hub-rg"
-  shared-key           = "4-v3ry-53cr37-1p53c-5h4r3d-k3y"
-  hub-vnet-name        = "hub-vnet"
+   shared-key           = "4-v3ry-53cr37-1p53c-5h4r3d-k3y"
 }
 
 #######################################################################
@@ -13,7 +11,7 @@ locals {
 #######################################################################
 
 resource "azurerm_resource_group" "private-endpoint-openhack-hub-rg" {
-  name     = local.hub-rg
+  name     = "private-endpoint-openhack-hub-rg"
   location = var.location
 
   tags = {
@@ -29,7 +27,7 @@ resource "azurerm_resource_group" "private-endpoint-openhack-hub-rg" {
 #######################################################################
 
 resource "azurerm_virtual_network" "hub-vnet" {
-  name                = local.hub-vnet-name
+  name                = var.hub-vnet
   location            = var.location
   resource_group_name = azurerm_resource_group.private-endpoint-openhack-hub-rg.name
   address_space       = ["10.0.0.0/16"]
@@ -47,14 +45,14 @@ resource "azurerm_virtual_network" "hub-vnet" {
 
 resource "azurerm_subnet" "hub-gateway-subnet" {
   name                 = "GatewaySubnet"
-  resource_group_name  = local.hub-rg
+  resource_group_name  = azurerm_resource_group.private-endpoint-openhack-hub-rg.name
   virtual_network_name = azurerm_virtual_network.hub-vnet.name
   address_prefix       = "10.0.255.224/27"
 }
 
 resource "azurerm_subnet" "hub-dns" {
   name                 = "DNSSubnet"
-  resource_group_name  = local.hub-rg
+  resource_group_name  = azurerm_resource_group.private-endpoint-openhack-hub-rg.name
   virtual_network_name = azurerm_virtual_network.hub-vnet.name
   address_prefix       = "10.0.0.0/24"
 }
@@ -65,8 +63,8 @@ resource "azurerm_subnet" "hub-dns" {
 
 resource "azurerm_virtual_network_peering" "hub-spoke-peer" {
   name                      = "hub-spoke-peer"
-  resource_group_name       = local.hub-rg
-  virtual_network_name      = local.hub-vnet-name
+  resource_group_name       = azurerm_resource_group.private-endpoint-openhack-hub-rg.name
+  virtual_network_name      = azurerm_virtual_network.hub-vnet.name
   remote_virtual_network_id = azurerm_virtual_network.spoke-vnet.id
   allow_virtual_network_access = true
   allow_forwarded_traffic   = true
@@ -82,7 +80,7 @@ resource "azurerm_virtual_network_peering" "hub-spoke-peer" {
 resource "azurerm_network_interface" "az-dns-nic" {
   name                 = "az-dns-nic"
   location             = var.location
-  resource_group_name  = local.hub-rg
+  resource_group_name  = azurerm_resource_group.private-endpoint-openhack-hub-rg.name
   enable_ip_forwarding = false
 
   ip_configuration {
@@ -105,7 +103,7 @@ resource "azurerm_network_interface" "az-dns-nic" {
 resource "azurerm_virtual_machine" "az-dns-vm" {
   name                  = "az-dns-vm"
   location              = var.location
-  resource_group_name   = local.hub-rg
+  resource_group_name   = azurerm_resource_group.private-endpoint-openhack-hub-rg.name
   network_interface_ids = [azurerm_network_interface.az-dns-nic.id]
   vm_size               = var.vmsize
 
@@ -147,7 +145,7 @@ resource "azurerm_virtual_machine" "az-dns-vm" {
 resource "azurerm_public_ip" "hub-vpn-gateway-pip" {
   name                = "hub-vpn-gateway-pip"
   location            = var.location
-  resource_group_name = local.hub-rg
+  resource_group_name = azurerm_resource_group.private-endpoint-openhack-hub-rg.name
 
   allocation_method = "Dynamic"
 }
@@ -155,7 +153,7 @@ resource "azurerm_public_ip" "hub-vpn-gateway-pip" {
 resource "azurerm_virtual_network_gateway" "hub-vnet-gateway" {
   name                = "hub-vpn-gateway"
   location            = var.location
-  resource_group_name = local.hub-rg
+  resource_group_name = azurerm_resource_group.private-endpoint-openhack-hub-rg.name
 
   type     = "Vpn"
   vpn_type = "RouteBased"
