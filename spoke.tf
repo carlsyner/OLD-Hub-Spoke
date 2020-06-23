@@ -79,6 +79,11 @@ resource "azurerm_network_interface" "az-mgmt-nic" {
     subnet_id                     = azurerm_subnet.spoke-infrastructure.id
     private_ip_address_allocation = "Dynamic"
   }
+
+  tags = {
+    environment = "spoke"
+    openhack    = "private-endpoint"
+  }
 }
 
 #######################################################################

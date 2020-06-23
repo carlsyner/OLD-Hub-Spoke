@@ -87,7 +87,12 @@ resource "azurerm_network_interface" "onprem-dns-nic" {
     subnet_id                     = azurerm_subnet.onprem-infrastructure-subnet.id
     private_ip_address_allocation = "static"
     private_ip_address            = "192.168.0.4"
-      }
+  }
+      
+    tags = {
+        environment = "onprem"
+        openhack    = "private-endpoint"
+    }
 }
 
 resource "azurerm_network_interface" "onprem-mgmt-nic" {
@@ -102,6 +107,11 @@ resource "azurerm_network_interface" "onprem-mgmt-nic" {
     private_ip_address_allocation = "Dynamic"
     public_ip_address_id          = azurerm_public_ip.onprem-mgmt-pip.id
   }
+
+    tags = {
+        environment = "onprem"
+        openhack    = "private-endpoint"
+    }
 }
 
 
@@ -247,5 +257,8 @@ resource "azurerm_virtual_network_gateway" "onprem-vpn-gateway" {
   }
   depends_on = [azurerm_public_ip.onprem-vpn-gateway-pip]
 
+  tags = {
+    environment = "onprem"
+    openhack    = "private-endpoint"
+  }
 }
-

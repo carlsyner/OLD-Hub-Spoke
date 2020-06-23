@@ -151,6 +151,11 @@ resource "azurerm_virtual_network_gateway" "hub-vnet-gateway" {
     subnet_id                     = azurerm_subnet.hub-gateway-subnet.id
   }
   depends_on = [azurerm_public_ip.hub-vpn-gateway-pip]
+
+   tags = {
+    environment = "hub-spoke"
+    openhack    = "private-endpoint"
+  }
 }
 
 #######################################################################
