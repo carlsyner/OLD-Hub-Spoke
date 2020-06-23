@@ -21,30 +21,6 @@ variable "vmsize" {
 }
 
 variable "onprem-vnet" {
-  description = "onprem vent"
+  description = "OnPrem Virtual Network"
   default     = "onprem-vnet"
-}
-
-variable "hub-vnet" {
-  description = "hub vent"
-  default     = "hub-vnet"
-}
-
-variable "spoke-vnet" {
-  description = "spoke vent"
-  default     = "spoke-vnet"
-}
-variable "spoke-rg" {
-  description = "spoke Resource Group"
-  default     = "private-link-microhack-spoke-rg"
-}
-
-variable "hub-rg" {
-  description = "Hub Resource Group"
-  default     = "private-link-microhack-hub-rg"
-}
-
-variable "onprem-rg" {
-  description = "Onprem Resource Group"
-  default     = "private-link-microhack-onprem-rg"
 }

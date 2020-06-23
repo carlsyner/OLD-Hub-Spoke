@@ -18,9 +18,9 @@ resource "azurerm_resource_group" "private-link-microhack-spoke-rg" {
 #######################################################################
 
 resource "azurerm_virtual_network" "spoke-vnet" {
-  name                = var.spoke-vnet
+  name                = "spoke-vnet"
   location            = var.location
-  resource_group_name = var.spoke-rg
+  resource_group_name = azurerm_resource_group.private-link-microhack-spoke-rg.name
   address_space       = ["10.1.0.0/16"]
 
   tags = {
@@ -36,7 +36,7 @@ resource "azurerm_virtual_network" "spoke-vnet" {
 
 resource "azurerm_subnet" "spoke-infrastructure" {
   name                 = "InfrastructureSubnet"
-  resource_group_name  = var.spoke-rg
+  resource_group_name  = azurerm_resource_group.private-link-microhack-spoke-rg.name
   virtual_network_name = azurerm_virtual_network.spoke-vnet.name
   address_prefix       = "10.1.0.0/24"
 }
@@ -47,7 +47,7 @@ resource "azurerm_subnet" "spoke-infrastructure" {
 
 resource "azurerm_virtual_network_peering" "spoke-hub-peer" {
   name                      = "spoke-hub-peer"
-  resource_group_name       = var.spoke-rg
+  resource_group_name       = azurerm_resource_group.private-link-microhack-spoke-rg.name
   virtual_network_name      = azurerm_virtual_network.spoke-vnet.name
   remote_virtual_network_id = azurerm_virtual_network.hub-vnet.id
 
@@ -65,7 +65,7 @@ resource "azurerm_virtual_network_peering" "spoke-hub-peer" {
 resource "azurerm_network_interface" "az-mgmt-nic" {
   name                 = "az-mgmt-nic"
   location             = var.location
-  resource_group_name  = var.spoke-rg
+  resource_group_name  = azurerm_resource_group.private-link-microhack-spoke-rg.name
   enable_ip_forwarding = false
 
   ip_configuration {
@@ -88,7 +88,7 @@ resource "azurerm_network_interface" "az-mgmt-nic" {
 resource "azurerm_virtual_machine" "az-mgmt-vm" {
   name                  = "az-mgmt-vm"
   location              = var.location
-  resource_group_name   = var.spoke-rg
+  resource_group_name   = azurerm_resource_group.private-link-microhack-spoke-rg.name
   network_interface_ids = [azurerm_network_interface.az-mgmt-nic.id]
   vm_size               = var.vmsize
 

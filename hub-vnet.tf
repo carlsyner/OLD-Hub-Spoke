@@ -27,9 +27,9 @@ resource "azurerm_resource_group" "private-link-microhack-hub-rg" {
 #######################################################################
 
 resource "azurerm_virtual_network" "hub-vnet" {
-  name                = var.hub-vnet
+  name                = "hub-vnet"
   location            = var.location
-  resource_group_name = var.onprem-rg
+  resource_group_name = azurerm_resource_group.private-link-microhack-onprem-rg.name
   address_space       = ["10.0.0.0/16"]
 
   tags = {
@@ -45,7 +45,7 @@ resource "azurerm_virtual_network" "hub-vnet" {
 
 resource "azurerm_subnet" "hub-gateway-subnet" {
   name                 = "GatewaySubnet"
-  resource_group_name  = var.onprem-rg
+  resource_group_name  = azurerm_resource_group.private-link-microhack-onprem-rg.name
   virtual_network_name = azurerm_virtual_network.hub-vnet.name
   address_prefix       = "10.0.255.224/27"
 }

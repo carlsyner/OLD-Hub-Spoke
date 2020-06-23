@@ -19,9 +19,9 @@ resource "azurerm_resource_group" "private-link-microhack-onprem-rg" {
 #######################################################################
 
 resource "azurerm_virtual_network" "onprem-vnet" {
-  name                = var.onprem-vnet
+  name                = "onprem-vnet"
   location            = var.location
-  resource_group_name = var.onprem-rg
+  resource_group_name = azurerm_resource_group.private-link-microhack-onprem-rg.name
   address_space       = ["192.168.0.0/16"]
   dns_servers         = ["192.168.0.4"]
 
@@ -38,14 +38,14 @@ resource "azurerm_virtual_network" "onprem-vnet" {
 
 resource "azurerm_subnet" "onprem-gateway-subnet" {
   name                 = "GatewaySubnet"
-  resource_group_name  = var.onprem-rg
+  resource_group_name  = azurerm_resource_group.private-link-microhack-onprem-rg.name
   virtual_network_name = azurerm_virtual_network.onprem-vnet.name
   address_prefix       = "192.168.255.224/27"
 }
 
 resource "azurerm_subnet" "onprem-infrastructure-subnet" {
   name                 = "InfrastructureSubnet"
-  resource_group_name  = var.onprem-rg
+  resource_group_name  = azurerm_resource_group.private-link-microhack-onprem-rg.name
   virtual_network_name = azurerm_virtual_network.onprem-vnet.name
   address_prefix       = "192.168.0.0/24"
 }
@@ -57,7 +57,7 @@ resource "azurerm_subnet" "onprem-infrastructure-subnet" {
 resource "azurerm_public_ip" "onprem-mgmt-pip" {
     name                 = "onprem-mgmt-pip"
     location            = var.location
-    resource_group_name = var.onprem-rg
+    resource_group_name = azurerm_resource_group.private-link-microhack-onprem-rg.name
     allocation_method   = "Dynamic"
 
     tags = {
@@ -74,7 +74,7 @@ resource "azurerm_public_ip" "onprem-mgmt-pip" {
 resource "azurerm_network_interface" "onprem-dns-nic" {
   name                 = "onprem-dns-nic"
   location             = var.location
-  resource_group_name  = var.onprem-rg
+  resource_group_name  = azurerm_resource_group.private-link-microhack-onprem-rg.name
   enable_ip_forwarding = false
 
   ip_configuration {
@@ -94,7 +94,7 @@ resource "azurerm_network_interface" "onprem-dns-nic" {
 resource "azurerm_network_interface" "onprem-mgmt-nic" {
   name                 = "onprem-mgmt-nic"
   location             = var.location
-  resource_group_name  = var.onprem-rg
+  resource_group_name  = azurerm_resource_group.private-link-microhack-onprem-rg.name
   enable_ip_forwarding = false
 
   ip_configuration {
@@ -120,7 +120,7 @@ resource "azurerm_network_interface" "onprem-mgmt-nic" {
 resource "azurerm_network_security_group" "onprem-mgmt-nsg" {
     name                = "onprem-mgmt-nsg"
     location            = var.location
-    resource_group_name = var.onprem-rg
+    resource_group_name = azurerm_resource_group.private-link-microhack-onprem-rg.name
 
     security_rule {
         name                       = "Allow_RDP"
@@ -153,7 +153,7 @@ resource "azurerm_subnet_network_security_group_association" "mgmt-nsg-associati
 resource "azurerm_virtual_machine" "onprem-dns-vm" {
   name                  = "onprem-dns-vm"
   location              = var.location
-  resource_group_name   = var.onprem-rg
+  resource_group_name   = azurerm_resource_group.private-link-microhack-onprem-rg.name
   network_interface_ids = [azurerm_network_interface.onprem-dns-nic.id]
   vm_size               = var.vmsize
 
@@ -191,7 +191,7 @@ resource "azurerm_virtual_machine" "onprem-dns-vm" {
 resource "azurerm_virtual_machine" "onprem-mgmt-vm" {
   name                  = "onprem-mgmt-vm"
   location              = var.location
-  resource_group_name   = var.onprem-rg
+  resource_group_name   = azurerm_resource_group.private-link-microhack-onprem-rg.name
   network_interface_ids = [azurerm_network_interface.onprem-mgmt-nic.id]
   vm_size               = var.vmsize
 
@@ -233,14 +233,14 @@ resource "azurerm_virtual_machine" "onprem-mgmt-vm" {
 resource "azurerm_public_ip" "onprem-vpn-gateway-pip" {
   name                = "onprem-vpn-gateway-pip"
   location            = var.location
-  resource_group_name = var.onprem-rg
+  resource_group_name = azurerm_resource_group.private-link-microhack-onprem-rg.name
   allocation_method = "Dynamic"
 }
 
 resource "azurerm_virtual_network_gateway" "onprem-vpn-gateway" {
   name                = "onprem-vpn-gateway"
   location            = var.location
-  resource_group_name = var.onprem-rg
+  resource_group_name = azurerm_resource_group.private-link-microhack-onprem-rg.name
 
   type     = "Vpn"
   vpn_type = "RouteBased"
