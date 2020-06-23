@@ -1,16 +1,24 @@
+#######################################################################
+## Define Locals
+#######################################################################
+
 locals {
-  onprem-location       = var.location
-  onprem-resource-group = "private-endpoint-openhack-onprem-rg"
-  prefix-onprem         = "onprem"
-}
+    onprem-rg             = "private-endpoint-openhack-onprem-rg"
+    onprem-vnet-name      = "onprem-vnet"
+  }
 
 #######################################################################
 ## Create Resource Group
 #######################################################################
 
-resource "azurerm_resource_group" "onprem-vnet-rg" {
-  name     = local.onprem-resource-group
-  location = local.onprem-location
+resource "azurerm_resource_group" "private-endpoint-openhack-onprem-rg" {
+  name     = local.onprem-rg
+  location = var.location
+
+ tags = {
+    environment = "onprem"
+    openhack    = "private-endpoint"
+  }
 }
 
 #######################################################################
@@ -18,14 +26,15 @@ resource "azurerm_resource_group" "onprem-vnet-rg" {
 #######################################################################
 
 resource "azurerm_virtual_network" "onprem-vnet" {
-  name                = "onprem-vnet"
-  location            = azurerm_resource_group.onprem-vnet-rg.location
-  resource_group_name = azurerm_resource_group.onprem-vnet-rg.name
+  name                = local.onprem-vnet-name
+  location            = var.location
+  resource_group_name = local.onprem-rg
   address_space       = ["192.168.0.0/16"]
   dns_servers         = ["192.168.0.4"]
 
   tags = {
-    environment = local.prefix-onprem
+    environment = "onprem"
+    openhack    = "private-endpoint"
   }
 }
 
@@ -35,15 +44,15 @@ resource "azurerm_virtual_network" "onprem-vnet" {
 
 resource "azurerm_subnet" "onprem-gateway-subnet" {
   name                 = "GatewaySubnet"
-  resource_group_name  = azurerm_resource_group.onprem-vnet-rg.name
-  virtual_network_name = azurerm_virtual_network.onprem-vnet.name
+  resource_group_name  = local.onprem-rg
+  virtual_network_name = local.onprem-vnet-name
   address_prefix       = "192.168.255.224/27"
 }
 
 resource "azurerm_subnet" "onprem-infrastructure-subnet" {
   name                 = "InfrastructureSubnet"
-  resource_group_name  = azurerm_resource_group.onprem-vnet-rg.name
-  virtual_network_name = azurerm_virtual_network.onprem-vnet.name
+  resource_group_name  = local.onprem-rg
+  virtual_network_name = local.onprem-vnet-name
   address_prefix       = "192.168.0.0/24"
 }
 
@@ -53,12 +62,13 @@ resource "azurerm_subnet" "onprem-infrastructure-subnet" {
 
 resource "azurerm_public_ip" "onprem-mgmt-pip" {
     name                 = "onprem-mgmt-pip"
-    location            = azurerm_resource_group.onprem-vnet-rg.location
-    resource_group_name = azurerm_resource_group.onprem-vnet-rg.name
+    location            = var.location
+    resource_group_name = local.onprem-rg
     allocation_method   = "Dynamic"
 
     tags = {
-        environment = local.prefix-onprem
+        environment = "onprem"
+        openhack    = "private-endpoint"
     }
 }
 
@@ -68,12 +78,12 @@ resource "azurerm_public_ip" "onprem-mgmt-pip" {
 
 resource "azurerm_network_interface" "onprem-dns-nic" {
   name                 = "onprem-dns-nic"
-  location             = azurerm_resource_group.onprem-vnet-rg.location
-  resource_group_name  = azurerm_resource_group.onprem-vnet-rg.name
+  location             = var.location
+  resource_group_name  = local.onprem-rg
   enable_ip_forwarding = false
 
   ip_configuration {
-    name                          = local.prefix-onprem
+    name                          = "onprem-dns-nic"
     subnet_id                     = azurerm_subnet.onprem-infrastructure-subnet.id
     private_ip_address_allocation = "static"
     private_ip_address            = "192.168.0.4"
@@ -82,12 +92,12 @@ resource "azurerm_network_interface" "onprem-dns-nic" {
 
 resource "azurerm_network_interface" "onprem-mgmt-nic" {
   name                 = "onprem-mgmt-nic"
-  location             = azurerm_resource_group.onprem-vnet-rg.location
-  resource_group_name  = azurerm_resource_group.onprem-vnet-rg.name
+  location             = var.location
+  resource_group_name  = local.onprem-rg
   enable_ip_forwarding = false
 
   ip_configuration {
-    name                          = local.prefix-onprem
+    name                          = "onprem-mgmt-nic"
     subnet_id                     = azurerm_subnet.onprem-infrastructure-subnet.id
     private_ip_address_allocation = "Dynamic"
     public_ip_address_id          = azurerm_public_ip.onprem-mgmt-pip.id
@@ -101,8 +111,8 @@ resource "azurerm_network_interface" "onprem-mgmt-nic" {
 
 resource "azurerm_network_security_group" "onprem-mgmt-nsg" {
     name                = "onprem-mgmt-nsg"
-    location            = azurerm_resource_group.onprem-vnet-rg.location
-    resource_group_name = azurerm_resource_group.onprem-vnet-rg.name
+    location            = var.location
+    resource_group_name = local.onprem-rg
 
     security_rule {
         name                       = "Allow_RDP"
@@ -118,6 +128,7 @@ resource "azurerm_network_security_group" "onprem-mgmt-nsg" {
 
     tags = {
         environment = "onprem"
+        openhack    = "private-endpoint"
     }
 }
 
@@ -132,8 +143,8 @@ resource "azurerm_subnet_network_security_group_association" "mgmt-nsg-associati
 
 resource "azurerm_virtual_machine" "onprem-dns-vm" {
   name                  = "onprem-dns-vm"
-  location              = azurerm_resource_group.onprem-vnet-rg.location
-  resource_group_name   = azurerm_resource_group.onprem-vnet-rg.name
+  location              = var.location
+  resource_group_name   = local.onprem-rg
   network_interface_ids = [azurerm_network_interface.onprem-dns-nic.id]
   vm_size               = var.vmsize
 
@@ -162,14 +173,15 @@ resource "azurerm_virtual_machine" "onprem-dns-vm" {
   }
 
   tags = {
-    environment = local.prefix-onprem
+    environment = "onprem"
+    openhack    = "private-endpoint"
   }
 }
 
 resource "azurerm_virtual_machine" "onprem-mgmt-vm" {
   name                  = "onprem-mgmt-vm"
-  location              = azurerm_resource_group.onprem-vnet-rg.location
-  resource_group_name   = azurerm_resource_group.onprem-vnet-rg.name
+  location              = var.location
+  resource_group_name   = local.onprem-rg
   network_interface_ids = [azurerm_network_interface.onprem-mgmt-nic.id]
   vm_size               = var.vmsize
 
@@ -198,7 +210,8 @@ resource "azurerm_virtual_machine" "onprem-mgmt-vm" {
   }
 
   tags = {
-    environment = local.prefix-onprem
+    environment = "onprem"
+    openhack    = "private-endpoint"
   }
 }
 
@@ -207,17 +220,17 @@ resource "azurerm_virtual_machine" "onprem-mgmt-vm" {
 #######################################################################
 
 resource "azurerm_public_ip" "onprem-vpn-gateway-pip" {
-  name                = "${local.prefix-onprem}-vpn-gateway-pip"
-  location            = azurerm_resource_group.onprem-vnet-rg.location
-  resource_group_name = azurerm_resource_group.onprem-vnet-rg.name
+  name                = "onprem-vpn-gateway-pip"
+  location            = var.location
+  resource_group_name = local.onprem-rg
 
   allocation_method = "Dynamic"
 }
 
 resource "azurerm_virtual_network_gateway" "onprem-vpn-gateway" {
   name                = "onprem-vpn-gateway"
-  location            = azurerm_resource_group.onprem-vnet-rg.location
-  resource_group_name = azurerm_resource_group.onprem-vnet-rg.name
+  location            = var.location
+  resource_group_name = local.onprem-rg
 
   type     = "Vpn"
   vpn_type = "RouteBased"

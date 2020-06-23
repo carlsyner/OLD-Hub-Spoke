@@ -1,8 +1,11 @@
+#######################################################################
+## Define Locals
+#######################################################################
+
 locals {
-  prefix-hub         = "hub"
-  hub-location       = var.location
-  hub-resource-group = "private-endpoint-openhack-hub-rg"
-  shared-key         = "4-v3ry-53cr37-1p53c-5h4r3d-k3y"
+  hub-rg               = "private-endpoint-openhack-hub-rg"
+  shared-key           = "4-v3ry-53cr37-1p53c-5h4r3d-k3y"
+  hub-vnet-name        = "hub-vnet"
 }
 
 #######################################################################
@@ -10,22 +13,29 @@ locals {
 #######################################################################
 
 resource "azurerm_resource_group" "hub-vnet-rg" {
-  name     = local.hub-resource-group
-  location = local.hub-location
+  name     = local.hub-rg
+  location = var.location
+
+  tags = {
+    environment = "hub-spoke"
+    openhack    = "private-endpoint"
+  }
 }
+
 
 #######################################################################
 ## Create Virtual Networks
 #######################################################################
 
 resource "azurerm_virtual_network" "hub-vnet" {
-  name                = "${local.prefix-hub}-vnet"
-  location            = azurerm_resource_group.hub-vnet-rg.location
-  resource_group_name = azurerm_resource_group.hub-vnet-rg.name
+  name                = local.hub-vnet-name 
+  location            = var.location
+  resource_group_name = local.hub-rg
   address_space       = ["10.0.0.0/16"]
 
   tags = {
     environment = "hub-spoke"
+    openhack    = "private-endpoint"
   }
 }
 
@@ -35,14 +45,14 @@ resource "azurerm_virtual_network" "hub-vnet" {
 
 resource "azurerm_subnet" "hub-gateway-subnet" {
   name                 = "GatewaySubnet"
-  resource_group_name  = azurerm_resource_group.hub-vnet-rg.name
-  virtual_network_name = azurerm_virtual_network.hub-vnet.name
+  resource_group_name  = local.hub-rg
+  virtual_network_name = local.hub-vnet-name
   address_prefix       = "10.0.255.224/27"
 }
 
 resource "azurerm_subnet" "hub-dns" {
   name                 = "DNSSubnet"
-  resource_group_name  = azurerm_resource_group.hub-vnet-rg.name
+  resource_group_name  = local.hub-rg
   virtual_network_name = azurerm_virtual_network.hub-vnet.name
   address_prefix       = "10.0.0.0/24"
 }
@@ -53,18 +63,19 @@ resource "azurerm_subnet" "hub-dns" {
 
 resource "azurerm_network_interface" "az-dns-nic" {
   name                 = "az-dns-nic"
-  location             = azurerm_resource_group.hub-vnet-rg.location
-  resource_group_name  = azurerm_resource_group.hub-vnet-rg.name
+  location             = var.location
+  resource_group_name  = local.hub-rg
   enable_ip_forwarding = false
 
   ip_configuration {
-    name                          = local.prefix-hub
+    name                          = "az-dns-nic"
     subnet_id                     = azurerm_subnet.hub-dns.id
     private_ip_address_allocation = "Dynamic"
   }
 
   tags = {
-    environment = local.prefix-hub
+    environment = "hub-spoke"
+    openhack    = "private-endpoint"
   }
 }
 
@@ -74,8 +85,8 @@ resource "azurerm_network_interface" "az-dns-nic" {
 
 resource "azurerm_virtual_machine" "az-dns-vm" {
   name                  = "az-dns-vm"
-  location              = azurerm_resource_group.hub-vnet-rg.location
-  resource_group_name   = azurerm_resource_group.hub-vnet-rg.name
+  location              = var.location
+  resource_group_name   = local.hub-rg
   network_interface_ids = [azurerm_network_interface.az-dns-nic.id]
   vm_size               = var.vmsize
 
@@ -104,7 +115,8 @@ resource "azurerm_virtual_machine" "az-dns-vm" {
   }
 
    tags = {
-    environment = local.prefix-hub
+    environment = "hub-spoke"
+    openhack    = "private-endpoint"
   }
 }
 
@@ -114,16 +126,16 @@ resource "azurerm_virtual_machine" "az-dns-vm" {
 
 resource "azurerm_public_ip" "hub-vpn-gateway-pip" {
   name                = "hub-vpn-gateway-pip"
-  location            = azurerm_resource_group.hub-vnet-rg.location
-  resource_group_name = azurerm_resource_group.hub-vnet-rg.name
+  location            = var.location
+  resource_group_name = local.hub-rg
 
   allocation_method = "Dynamic"
 }
 
 resource "azurerm_virtual_network_gateway" "hub-vnet-gateway" {
   name                = "hub-vpn-gateway"
-  location            = azurerm_resource_group.hub-vnet-rg.location
-  resource_group_name = azurerm_resource_group.hub-vnet-rg.name
+  location            = var.location
+  resource_group_name = local.hub-rg
 
   type     = "Vpn"
   vpn_type = "RouteBased"
@@ -147,8 +159,8 @@ resource "azurerm_virtual_network_gateway" "hub-vnet-gateway" {
 
 resource "azurerm_virtual_network_gateway_connection" "hub-onprem-conn" {
   name                = "hub-onprem-conn"
-  location            = azurerm_resource_group.hub-vnet-rg.location
-  resource_group_name = azurerm_resource_group.hub-vnet-rg.name
+  location            = var.location
+  resource_group_name = local.hub-rg
 
   type           = "Vnet2Vnet"
   routing_weight = 1
@@ -161,8 +173,8 @@ resource "azurerm_virtual_network_gateway_connection" "hub-onprem-conn" {
 
 resource "azurerm_virtual_network_gateway_connection" "onprem-hub-conn" {
   name                = "onprem-hub-conn"
-  location            = azurerm_resource_group.onprem-vnet-rg.location
-  resource_group_name = azurerm_resource_group.onprem-vnet-rg.name
+  location            = var.location
+  resource_group_name = azurerm_resource_group.private-endpoint-openhack-onprem-rg.name
   type                            = "Vnet2Vnet"
   routing_weight = 1
   virtual_network_gateway_id      = azurerm_virtual_network_gateway.onprem-vpn-gateway.id
