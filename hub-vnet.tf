@@ -5,7 +5,6 @@
 locals {
   hub-rg               = "private-endpoint-openhack-hub-rg"
   shared-key           = "4-v3ry-53cr37-1p53c-5h4r3d-k3y"
-  hub-vnet-name        = "hub-vnet"
 }
 
 #######################################################################
@@ -28,7 +27,7 @@ resource "azurerm_resource_group" "hub-vnet-rg" {
 #######################################################################
 
 resource "azurerm_virtual_network" "hub-vnet" {
-  name                = local.hub-vnet-name 
+  name                = "hub-vnet"
   location            = var.location
   resource_group_name = local.hub-rg
   address_space       = ["10.0.0.0/16"]
@@ -46,14 +45,14 @@ resource "azurerm_virtual_network" "hub-vnet" {
 resource "azurerm_subnet" "hub-gateway-subnet" {
   name                 = "GatewaySubnet"
   resource_group_name  = local.hub-rg
-  virtual_network_name = local.hub-vnet-name
+  virtual_network_name = "hub-vnet"
   address_prefix       = "10.0.255.224/27"
 }
 
 resource "azurerm_subnet" "hub-dns" {
   name                 = "DNSSubnet"
   resource_group_name  = local.hub-rg
-  virtual_network_name = azurerm_virtual_network.hub-vnet.name
+  virtual_network_name = "hub-vnet"
   address_prefix       = "10.0.0.0/24"
 }
 

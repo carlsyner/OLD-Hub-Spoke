@@ -4,7 +4,6 @@
 
 locals {
    spoke-rg             = "private-endpoint-openhack-spoke-rg"
-   spoke-vnet-name      = "spoke-vnet"
 }
 
 #######################################################################
@@ -25,7 +24,7 @@ resource "azurerm_resource_group" "private-endpoint-openhack-spoke-rg" {
 #######################################################################
 
 resource "azurerm_virtual_network" "spoke-vnet" {
-  name                = local.spoke-vnet-name
+  name                = "spoke-vnet"
   location            = var.location
   resource_group_name = local.spoke-rg
   address_space       = ["10.1.0.0/16"]
@@ -43,7 +42,7 @@ resource "azurerm_virtual_network" "spoke-vnet" {
 resource "azurerm_subnet" "spoke-infrastructure" {
   name                 = "InfrastructureSubnet"
   resource_group_name  = local.spoke-rg
-  virtual_network_name = local.spoke-vnet-name
+  virtual_network_name = "spoke-vnet"
   address_prefix       = "10.1.0.0/24"
 }
 
@@ -54,7 +53,7 @@ resource "azurerm_subnet" "spoke-infrastructure" {
 resource "azurerm_virtual_network_peering" "spoke-hub-peer" {
   name                      = "spoke-hub-peer"
   resource_group_name       = local.spoke-rg
-  virtual_network_name      = local.spoke-vnet-name
+  virtual_network_name      = "spoke-vnet"
   remote_virtual_network_id = azurerm_virtual_network.hub-vnet.id
 
   allow_virtual_network_access = true
@@ -134,7 +133,7 @@ resource "azurerm_virtual_machine" "az-mgmt-vm" {
 resource "azurerm_virtual_network_peering" "hub-spoke-peer" {
   name                      = "hub-spoke-peer"
   resource_group_name       = local.spoke-rg
-  virtual_network_name      = local.spoke-vnet-name
+  virtual_network_name      = "spoke-vnet"
   remote_virtual_network_id = azurerm_virtual_network.spoke-vnet.id
   allow_virtual_network_access = true
   allow_forwarded_traffic   = true
