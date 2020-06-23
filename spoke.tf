@@ -17,6 +17,7 @@ resource "azurerm_resource_group" "private-endpoint-openhack-spoke-rg" {
 
  tags = {
     environment = "spoke"
+    deployment  = "terraform"
     openhack    = "private-endpoint"
   }
 }
@@ -27,11 +28,12 @@ resource "azurerm_resource_group" "private-endpoint-openhack-spoke-rg" {
 resource "azurerm_virtual_network" "spoke-vnet" {
   name                = local.spoke-vnet-name
   location            = var.location
-  resource_group_name = local.spoke-rg
+  resource_group_name = azurerm_resource_group.private-endpoint-openhack-spoke-rg.name
   address_space       = ["10.1.0.0/16"]
 
   tags = {
     environment = "spoke"
+    deployment  = "terraform"
     openhack    = "private-endpoint"
   }
 }
@@ -82,6 +84,7 @@ resource "azurerm_network_interface" "az-mgmt-nic" {
 
   tags = {
     environment = "spoke"
+    deployment  = "terraform"
     openhack    = "private-endpoint"
   }
 }
@@ -123,6 +126,7 @@ resource "azurerm_virtual_machine" "az-mgmt-vm" {
 
   tags = {
     environment = "spoke"
+    deployment  = "terraform"
     openhack    = "private-endpoint"
   }
 }

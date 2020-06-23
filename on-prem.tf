@@ -17,6 +17,7 @@ resource "azurerm_resource_group" "private-endpoint-openhack-onprem-rg" {
 
  tags = {
     environment = "onprem"
+    deployment  = "terraform"
     openhack    = "private-endpoint"
   }
 }
@@ -28,12 +29,13 @@ resource "azurerm_resource_group" "private-endpoint-openhack-onprem-rg" {
 resource "azurerm_virtual_network" "onprem-vnet" {
   name                = local.onprem-vnet-name
   location            = var.location
-  resource_group_name = local.onprem-rg
+  resource_group_name = azurerm_resource_group.private-endpoint-openhack-onprem-rg.name
   address_space       = ["192.168.0.0/16"]
   dns_servers         = ["192.168.0.4"]
 
   tags = {
     environment = "onprem"
+    deployment  = "terraform"
     openhack    = "private-endpoint"
   }
 }
@@ -68,6 +70,7 @@ resource "azurerm_public_ip" "onprem-mgmt-pip" {
 
     tags = {
         environment = "onprem"
+        deployment  = "terraform"
         openhack    = "private-endpoint"
     }
 }
@@ -91,6 +94,7 @@ resource "azurerm_network_interface" "onprem-dns-nic" {
       
     tags = {
         environment = "onprem"
+        deployment  = "terraform"
         openhack    = "private-endpoint"
     }
 }
@@ -110,6 +114,7 @@ resource "azurerm_network_interface" "onprem-mgmt-nic" {
 
     tags = {
         environment = "onprem"
+        deployment  = "terraform"
         openhack    = "private-endpoint"
     }
 }
@@ -138,6 +143,7 @@ resource "azurerm_network_security_group" "onprem-mgmt-nsg" {
 
     tags = {
         environment = "onprem"
+        deployment  = "terraform"
         openhack    = "private-endpoint"
     }
 }
@@ -184,6 +190,7 @@ resource "azurerm_virtual_machine" "onprem-dns-vm" {
 
   tags = {
     environment = "onprem"
+    deployment  = "terraform"
     openhack    = "private-endpoint"
   }
 }
@@ -221,6 +228,7 @@ resource "azurerm_virtual_machine" "onprem-mgmt-vm" {
 
   tags = {
     environment = "onprem"
+    deployment  = "terraform"
     openhack    = "private-endpoint"
   }
 }
@@ -259,6 +267,7 @@ resource "azurerm_virtual_network_gateway" "onprem-vpn-gateway" {
 
   tags = {
     environment = "onprem"
+    deployment  = "terraform"
     openhack    = "private-endpoint"
   }
 }

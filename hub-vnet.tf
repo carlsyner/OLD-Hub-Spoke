@@ -18,6 +18,7 @@ resource "azurerm_resource_group" "private-endpoint-openhack-hub-rg" {
 
   tags = {
     environment = "hub-spoke"
+    deployment  = "terraform"
     openhack    = "private-endpoint"
   }
 }
@@ -30,11 +31,12 @@ resource "azurerm_resource_group" "private-endpoint-openhack-hub-rg" {
 resource "azurerm_virtual_network" "hub-vnet" {
   name                = local.hub-vnet-name
   location            = var.location
-  resource_group_name = local.hub-rg
+  resource_group_name = azurerm_resource_group.private-endpoint-openhack-hub-rg.name
   address_space       = ["10.0.0.0/16"]
 
   tags = {
     environment = "hub-spoke"
+    deployment  = "terraform"
     openhack    = "private-endpoint"
   }
 }
@@ -91,6 +93,7 @@ resource "azurerm_network_interface" "az-dns-nic" {
 
   tags = {
     environment = "hub-spoke"
+    deployment  = "terraform"
     openhack    = "private-endpoint"
   }
 }
@@ -132,6 +135,7 @@ resource "azurerm_virtual_machine" "az-dns-vm" {
 
    tags = {
     environment = "hub-spoke"
+    deployment  = "terraform"
     openhack    = "private-endpoint"
   }
 }
@@ -170,6 +174,7 @@ resource "azurerm_virtual_network_gateway" "hub-vnet-gateway" {
 
    tags = {
     environment = "hub-spoke"
+    deployment  = "terraform"
     openhack    = "private-endpoint"
   }
 }
@@ -202,4 +207,10 @@ resource "azurerm_virtual_network_gateway_connection" "onprem-hub-conn" {
   peer_virtual_network_gateway_id = azurerm_virtual_network_gateway.hub-vnet-gateway.id
 
   shared_key = local.shared-key
+
+   tags = {
+    environment = "hub-spoke"
+    deployment  = "terraform"
+    openhack    = "private-endpoint"
+  }
 }
